@@ -28,17 +28,31 @@ def get_state():
 
 @app.post("/step", response_model=StepResponse)
 def step(request: StepRequest):
-        # ✅ Validate action
     if request.action not in ["accept", "propose_edit", "escalate"]:
-        return {
-            "state": None,
-            "reward": -1.0,
-            "done": True
-        }
+        return {"state": None, "reward": -1.0, "done": True}
     next_state, reward, done, _ = env.step(request.action)
+    return StepResponse(state=next_state, reward=reward, done=done)
 
-    return StepResponse(
-        state=next_state,
-        reward=reward,
-        done=done
-    )
+
+# ✅ Added: OpenEnv inference endpoint
+@app.post("/act")
+def act(state: dict):
+    clause = state.get("clause", "").lower()
+    policy = state.get("policy", "").lower()
+    risk = state.get("risk_level", "")
+    importance = state.get("vendor_importance", "")
+
+    if clause == policy:
+        return {"action": "accept"}
+    if risk == "high":
+        if importance == "high":
+            return {"action": "propose_edit"}
+        return {"action": "escalate"}
+    if risk == "low":
+        return {"action": "propose_edit"}
+    return {"action": "accept"}
+
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
