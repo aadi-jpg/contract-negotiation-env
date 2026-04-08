@@ -1,22 +1,18 @@
-import asyncio
 import os
 from openai import OpenAI
-
-# Environment import - update this to match your env class
 from env import ContractEnv
 
 API_KEY = os.getenv("HF_TOKEN") or os.getenv("API_KEY")
-API_BASE_URL = os.getenv("API_BASE_URL") or "https://router.huggingface.co/v1"
-MODEL_NAME = os.getenv("MODEL_NAME") or "Qwen/Qwen2.5-72B-Instruct"
+API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
+MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
 TASK_NAME = os.getenv("TASK_NAME", "easy")
 BENCHMARK = "contract-negotiation-env"
 MAX_STEPS = 10
 
 SYSTEM_PROMPT = """
-You are a contract negotiation agent. Given a contract clause, policy, risk level, 
-and vendor importance, you must decide the best action.
-Available actions: accept, propose_edit, escalate
-Reply with exactly one word: accept, propose_edit, or escalate.
+You are a contract negotiation agent. Given a contract clause, policy, risk level,
+and vendor importance, decide the best action.
+Reply with exactly one word only: accept, propose_edit, or escalate.
 """
 
 def log_start(task, env, model):
@@ -36,7 +32,7 @@ Clause: {state.get('clause')}
 Policy: {state.get('policy')}
 Risk Level: {state.get('risk_level')}
 Vendor Importance: {state.get('vendor_importance')}
-What action should be taken? Reply with exactly one of: accept, propose_edit, escalate
+Reply with exactly one word: accept, propose_edit, or escalate.
 """
     try:
         completion = client.chat.completions.create(

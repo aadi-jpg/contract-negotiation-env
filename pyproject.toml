@@ -1,10 +1,19 @@
 [project]
 name = "contract-negotiation-env"
 version = "0.1.0"
-description = "Contract negotiation environment with rule-based and LLM agents"
+description = "Contract negotiation environment"
 requires-python = ">=3.10"
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "openai",
+    "pydantic",
+    "openenv-core>=0.2.0",
+]
+
+[project.scripts]
+server = "main:app"
 
 [tool.openenv]
 name = "contract-negotiation-env"
 entry_point = "inference.py"
-actions = ["accept", "propose_edit", "escalate"]
