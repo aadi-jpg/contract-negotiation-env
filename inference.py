@@ -1,32 +1,92 @@
+import asyncio
+import os
+from openai import OpenAI
 
-from fastapi import FastAPI
-from pydantic import BaseModel
+# Environment import - update this to match your env class
+from env import ContractEnv
 
-app = FastAPI()
+API_KEY = os.getenv("HF_TOKEN") or os.getenv("API_KEY")
+API_BASE_URL = os.getenv("API_BASE_URL") or "https://router.huggingface.co/v1"
+MODEL_NAME = os.getenv("MODEL_NAME") or "Qwen/Qwen2.5-72B-Instruct"
+TASK_NAME = os.getenv("TASK_NAME", "easy")
+BENCHMARK = "contract-negotiation-env"
+MAX_STEPS = 10
 
-class State(BaseModel):
-    clause: str = ""
-    policy: str = ""
-    risk_level: str = ""
-    vendor_importance: str = ""
+SYSTEM_PROMPT = """
+You are a contract negotiation agent. Given a contract clause, policy, risk level, 
+and vendor importance, you must decide the best action.
+Available actions: accept, propose_edit, escalate
+Reply with exactly one word: accept, propose_edit, or escalate.
+"""
 
-@app.post("/act")
-def act(state: State):
-    clause = state.clause.lower()
-    policy = state.policy.lower()
-    risk = state.risk_level
-    importance = state.vendor_importance
+def log_start(task, env, model):
+    print(f"[START] task={task} env={env} model={model}", flush=True)
 
-    if clause == policy:
-        return {"action": "accept"}
-    if risk == "high":
-        if importance == "high":
-            return {"action": "propose_edit"}
-        return {"action": "escalate"}
-    if risk == "low":
-        return {"action": "propose_edit"}
-    return {"action": "accept"}
+def log_step(step, action, reward, done, error):
+    error_val = error if error else "null"
+    print(f"[STEP] step={step} action={action} reward={reward:.2f} done={str(done).lower()} error={error_val}", flush=True)
 
-@app.get("/health")
-def health():
-    return {"status": "ok"}
+def log_end(success, steps, score, rewards):
+    rewards_str = ",".join(f"{r:.2f}" for r in rewards)
+    print(f"[END] success={str(success).lower()} steps={steps} score={score:.3f} rewards={rewards_str}", flush=True)
+
+def get_action(client, state):
+    prompt = f"""
+Clause: {state.get('clause')}
+Policy: {state.get('policy')}
+Risk Level: {state.get('risk_level')}
+Vendor Importance: {state.get('vendor_importance')}
+What action should be taken? Reply with exactly one of: accept, propose_edit, escalate
+"""
+    try:
+        completion = client.chat.completions.create(
+            model=MODEL_NAME,
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.0,
+            max_tokens=10,
+        )
+        action = completion.choices[0].message.content.strip().lower()
+        if action not in ["accept", "propose_edit", "escalate"]:
+            return "accept"
+        return action
+    except Exception as e:
+        print(f"[DEBUG] Model error: {e}", flush=True)
+        return "accept"
+
+def main():
+    client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
+    env = ContractEnv(task=TASK_NAME)
+
+    rewards = []
+    steps_taken = 0
+    score = 0.0
+    success = False
+
+    log_start(task=TASK_NAME, env=BENCHMARK, model=MODEL_NAME)
+
+    try:
+        state = env.reset()
+
+        for step in range(1, MAX_STEPS + 1):
+            action = get_action(client, state)
+            state, reward, done, _ = env.step(action)
+
+            rewards.append(reward)
+            steps_taken = step
+            log_step(step=step, action=action, reward=reward, done=done, error=None)
+
+            if done:
+                break
+
+        score = sum(rewards) / steps_taken if steps_taken > 0 else 0.0
+        score = min(max(score, 0.0), 1.0)
+        success = score >= 0.5
+
+    finally:
+        log_end(success=success, steps=steps_taken, score=score, rewards=rewards)
+
+if __name__ == "__main__":
+    main()
