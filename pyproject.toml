@@ -1,0 +1,10 @@
+[project]
+name = "contract-negotiation-env"
+version = "0.1.0"
+description = "Contract negotiation environment with rule-based and LLM agents"
+requires-python = ">=3.10"
+
+[tool.openenv]
+name = "contract-negotiation-env"
+entry_point = "inference.py"
+actions = ["accept", "propose_edit", "escalate"]
