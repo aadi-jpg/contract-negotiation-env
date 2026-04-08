@@ -1,0 +1,29 @@
+[
+  {
+    "state": {
+      "clause": "Payment must be made within 7 days",
+      "policy": "Minimum payment cycle is 30 days",
+      "risk_level": "high",
+      "vendor_importance": "medium"
+    },
+    "correct_action": "propose_edit"
+  },
+  {
+    "state": {
+      "clause": "Vendor has no liability",
+      "policy": "Shared liability required",
+      "risk_level": "high",
+      "vendor_importance": "low"
+    },
+    "correct_action": "propose_edit"
+  },
+  {
+    "state": {
+      "clause": "Payment within 30 days",
+      "policy": "Minimum payment cycle is 30 days",
+      "risk_level": "low",
+      "vendor_importance": "high"
+    },
+    "correct_action": "accept"
+  }
+]

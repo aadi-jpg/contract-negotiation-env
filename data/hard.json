@@ -1,0 +1,29 @@
+[
+  {
+    "state": {
+      "clause": "Vendor holds zero liability under all conditions",
+      "policy": "Shared liability mandatory",
+      "risk_level": "high",
+      "vendor_importance": "very_high"
+    },
+    "correct_action": "escalate"
+  },
+  {
+    "state": {
+      "clause": "Payment within 15 days for priority vendors",
+      "policy": "Minimum payment cycle is 30 days",
+      "risk_level": "medium",
+      "vendor_importance": "very_high"
+    },
+    "correct_action": "escalate"
+  },
+  {
+    "state": {
+      "clause": "All disputes handled in vendor’s jurisdiction",
+      "policy": "Neutral jurisdiction required",
+      "risk_level": "high",
+      "vendor_importance": "medium"
+    },
+    "correct_action": "propose_edit"
+  }
+]

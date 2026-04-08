@@ -1,0 +1,29 @@
+[
+  {
+    "state": {
+      "clause": "Payment within 20 days",
+      "policy": "Minimum payment cycle is 30 days",
+      "risk_level": "medium",
+      "vendor_importance": "high"
+    },
+    "correct_action": "propose_edit"
+  },
+  {
+    "state": {
+      "clause": "Vendor liability capped at 50%",
+      "policy": "Full shared liability required",
+      "risk_level": "medium",
+      "vendor_importance": "high"
+    },
+    "correct_action": "escalate"
+  },
+  {
+    "state": {
+      "clause": "Minor delay penalties removed",
+      "policy": "Penalties optional for high-value vendors",
+      "risk_level": "low",
+      "vendor_importance": "high"
+    },
+    "correct_action": "accept"
+  }
+]

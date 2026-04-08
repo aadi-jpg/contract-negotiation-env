@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Contract Negotiation Env</title>
+
+```
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: #0f172a;
+        color: white;
+        text-align: center;
+        padding: 30px;
+    }
+
+    .card {
+        background: #1e293b;
+        padding: 20px;
+        border-radius: 12px;
+        margin: 20px auto;
+        width: 60%;
+    }
+
+    button {
+        padding: 10px 20px;
+        margin: 10px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: bold;
+    }
+
+    .accept { background: #22c55e; }
+    .edit { background: #3b82f6; }
+    .escalate { background: #ef4444; }
+
+    .reward {
+        font-size: 22px;
+        margin-top: 15px;
+    }
+</style>
+```
+
+</head>
+<body>
+
+```
+<h1>📄 Contract Negotiation Environment</h1>
+
+<div class="card">
+    <h3>Clause</h3>
+    <p id="clause">Loading...</p>
+
+    <h3>Policy</h3>
+    <p id="policy">Loading...</p>
+
+    <h3>Risk Level</h3>
+    <p id="risk"></p>
+
+    <h3>Vendor Importance</h3>
+    <p id="vendor"></p>
+</div>
+
+<div>
+    <button class="accept" onclick="takeAction('accept')">Accept</button>
+    <button class="edit" onclick="takeAction('propose_edit')">Propose Edit</button>
+    <button class="escalate" onclick="takeAction('escalate')">Escalate</button>
+</div>
+
+<div class="reward" id="reward"></div>
+
+<script>
+    // 🔴 CHANGE THIS TO YOUR HF SPACE URL
+    const API_URL = "https://aadiv123-contract-env.hf.space";
+
+    async function resetEnv() {
+        await fetch(`${API_URL}/reset`, { method: "POST" });
+        loadState();
+        document.getElementById("reward").innerText = "";
+    }
+
+    async function loadState() {
+        const res = await fetch(`${API_URL}/state`);
+        const data = await res.json();
+
+        // ✅ IMPORTANT: state is nested
+        const s = data.state;
+
+        document.getElementById("clause").innerText = s.clause;
+        document.getElementById("policy").innerText = s.policy;
+        document.getElementById("risk").innerText = s.risk_level;
+        document.getElementById("vendor").innerText = s.vendor_importance;
+    }
+
+    async function takeAction(action) {
+        const res = await fetch(`${API_URL}/step`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ action: action })
+        });
+
+        const data = await res.json();
+
+        loadState();
+
+        document.getElementById("reward").innerText =
+            `Reward: ${data.reward} | Done: ${data.done}`;
+    }
+
+    // Load automatically
+    resetEnv();
+</script>
+```
+
+</body>
+</html>
