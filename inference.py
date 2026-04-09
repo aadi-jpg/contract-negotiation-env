@@ -1,4 +1,10 @@
 import os
+import subprocess
+import sys
+
+subprocess.check_call([sys.executable, "-m", "pip", "install", "openai"], 
+                      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
 from openai import OpenAI
 from env import ContractEnv
 
