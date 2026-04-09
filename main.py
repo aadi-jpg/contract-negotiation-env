@@ -1,30 +1,50 @@
-# main.py
-
 from fastapi import FastAPI
+from pydantic import BaseModel
 from env import ContractEnv
 from models import StepRequest, StepResponse
 
 app = FastAPI()
-
-# Create global environment
 env = ContractEnv(task="easy")
 
+class GraderRequest(BaseModel):
+    task: str
+    state: dict
+    action: str
+
+def _score(action, state):
+    clause = state.get("clause", "").lower()
+    policy = state.get("policy", "").lower()
+    risk = state.get("risk_level", "")
+    importance = state.get("vendor_importance", "")
+    if clause == policy:
+        return 0.99 if action == "accept" else 0.01
+    if risk == "high":
+        if importance == "high":
+            if action == "propose_edit": return 0.99
+            elif action == "escalate": return 0.6
+            else: return 0.01
+        else:
+            if action == "escalate": return 0.6
+            elif action == "propose_edit": return 0.8
+            else: return 0.01
+    if risk == "low":
+        if action == "propose_edit": return 0.99
+        elif action == "accept": return 0.8
+        else: return 0.01
+    return 0.01
 
 @app.get("/")
 def home():
     return {"message": "Contract Negotiation Environment API"}
-
 
 @app.post("/reset")
 def reset():
     state = env.reset()
     return {"state": state}
 
-
 @app.get("/state")
 def get_state():
     return {"state": env.state()}
-
 
 @app.post("/step", response_model=StepResponse)
 def step(request: StepRequest):
@@ -33,25 +53,14 @@ def step(request: StepRequest):
     next_state, reward, done, _ = env.step(request.action)
     return StepResponse(state=next_state, reward=reward, done=done)
 
+@app.post("/grader")
+def grader(request: GraderRequest):
+    score = _score(request.action, request.state)
+    return {"score": score, "task": request.task}
 
-# ✅ Added: OpenEnv inference endpoint
-@app.post("/act")
-def act(state: dict):
-    clause = state.get("clause", "").lower()
-    policy = state.get("policy", "").lower()
-    risk = state.get("risk_level", "")
-    importance = state.get("vendor_importance", "")
-
-    if clause == policy:
-        return {"action": "accept"}
-    if risk == "high":
-        if importance == "high":
-            return {"action": "propose_edit"}
-        return {"action": "escalate"}
-    if risk == "low":
-        return {"action": "propose_edit"}
-    return {"action": "accept"}
-
+@app.get("/tasks")
+def tasks():
+    return {"tasks": ["easy", "medium", "hard"]}
 
 @app.get("/health")
 def health():
