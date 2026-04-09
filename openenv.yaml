@@ -24,6 +24,9 @@ reward:
     incorrect actions are penalized.
 
 tasks:
-  - easy
-  - medium
-  - hard
+  - name: easy
+    grader: grader.grade_action
+  - name: medium
+    grader: grader.grade_action
+  - name: hard
+    grader: grader.grade_action
