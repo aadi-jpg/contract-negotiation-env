@@ -1,13 +1,45 @@
 # grader.py
-
-def compute_score(total_reward, max_possible_reward):
+def grade_action(state, action):
     """
-    Normalize score between 0 and 1
+    Returns reward based on correctness of action
     """
-    if max_possible_reward == 0:
-        return 0.0
+    clause = state.get("clause", "").lower()
+    policy = state.get("policy", "").lower()
+    risk = state.get("risk_level", "")
+    importance = state.get("vendor_importance", "")
 
-    score = total_reward / max_possible_reward
+    # Case 1: perfect match → accept
+    if clause == policy:
+        if action == "accept":
+            return 0.99
+        else:
+            return 0.01
 
-    # Clamp between 0 and 1
-    return max(0.0, min(1.0, score))
+    # Case 2: high risk conflicts
+    if risk == "high":
+        if importance == "high":
+            if action == "propose_edit":
+                return 0.99
+            elif action == "escalate":
+                return 0.6
+            else:
+                return 0.01
+        else:
+            if action == "escalate":
+                return 0.6
+            elif action == "propose_edit":
+                return 0.8
+            else:
+                return 0.01
+
+    # Case 3: low risk → prefer edit
+    if risk == "low":
+        if action == "propose_edit":
+            return 0.99
+        elif action == "accept":
+            return 0.8
+        else:
+            return 0.01
+
+    # fallback
+    return 0.01
