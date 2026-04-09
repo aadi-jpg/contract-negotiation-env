@@ -20,15 +20,11 @@ reward:
   type: dense
   description: >
     Reward is based on alignment with policy and risk handling.
-    Correct actions get full reward, cautious actions get partial reward,
-    incorrect actions are penalized.
 
 tasks:
-  - easy
-  - medium
-  - hard
-
-graders:
-  easy: grader.grade_action
-  medium: grader.grade_action
-  hard: grader.grade_action
+  - name: easy
+    grader: grader.easy
+  - name: medium
+    grader: grader.medium
+  - name: hard
+    grader: grader.hard

@@ -1,10 +1,17 @@
 # grader.py
+from openenv.core.rubrics import Rubric
 
-def _score(action, state):
-    clause = state.get("clause", "").lower()
-    policy = state.get("policy", "").lower()
-    risk = state.get("risk_level", "")
-    importance = state.get("vendor_importance", "")
+def _compute(action, state):
+    if isinstance(state, dict):
+        clause = state.get("clause", "").lower()
+        policy = state.get("policy", "").lower()
+        risk = state.get("risk_level", "")
+        importance = state.get("vendor_importance", "")
+    else:
+        clause = getattr(state, "clause", "").lower()
+        policy = getattr(state, "policy", "").lower()
+        risk = getattr(state, "risk_level", "")
+        importance = getattr(state, "vendor_importance", "")
 
     if clause == policy:
         return 0.99 if action == "accept" else 0.01
@@ -23,14 +30,21 @@ def _score(action, state):
         else: return 0.01
     return 0.01
 
+class EasyRubric(Rubric):
+    def forward(self, action, observation) -> float:
+        return _compute(action, observation)
+
+class MediumRubric(Rubric):
+    def forward(self, action, observation) -> float:
+        return _compute(action, observation)
+
+class HardRubric(Rubric):
+    def forward(self, action, observation) -> float:
+        return _compute(action, observation)
+
+easy = EasyRubric()
+medium = MediumRubric()
+hard = HardRubric()
+
 def grade_action(state, action):
-    return _score(action, state)
-
-def easy(state, action):
-    return _score(action, state)
-
-def medium(state, action):
-    return _score(action, state)
-
-def hard(state, action):
-    return _score(action, state)
+    return _compute(action, state)
