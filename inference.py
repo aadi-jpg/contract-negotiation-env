@@ -83,8 +83,8 @@ def main():
             if done:
                 break
 
-        score = sum(rewards) / steps_taken if steps_taken > 0 else 0.0
-        score = min(max(score, 0.0), 1.0)
+        score = sum(rewards) / steps_taken if steps_taken > 0 else 0.01
+        score = min(0.99, max(0.01, score))
         success = score >= 0.5
 
     finally:
