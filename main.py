@@ -5,7 +5,14 @@ from env import ContractEnv
 from models import StepRequest, StepResponse
 
 app = FastAPI(version="0.1.0")
-env = ContractEnv(task="easy")
+
+envs = {
+    "easy": ContractEnv(task="easy"),
+    "medium": ContractEnv(task="medium"),
+    "hard": ContractEnv(task="hard"),
+}
+current_task = "easy"
+env = envs["easy"]
 
 def _score(action, state):
     if isinstance(state, dict):
@@ -54,47 +61,48 @@ def metadata():
 @app.get("/schema")
 def schema():
     return {
-        "action": {
-            "type": "string",
-            "enum": ["accept", "propose_edit", "escalate"]
-        },
-        "observation": {
-            "clause": "string",
-            "policy": "string",
-            "risk_level": "string",
-            "vendor_importance": "string"
-        },
-        "state": {
-            "clause": "string",
-            "policy": "string",
-            "risk_level": "string",
-            "vendor_importance": "string"
-        }
+        "action": {"type": "string", "enum": ["accept", "propose_edit", "escalate"]},
+        "observation": {"clause": "string", "policy": "string", "risk_level": "string", "vendor_importance": "string"},
+        "state": {"clause": "string", "policy": "string", "risk_level": "string", "vendor_importance": "string"}
     }
 
 @app.post("/mcp")
 async def mcp(request: Request):
-    body = await request.json()
-    return {
-        "jsonrpc": "2.0",
-        "id": body.get("id", 1),
-        "result": {}
-    }
+    try:
+        body = await request.json()
+    except:
+        body = {}
+    return {"jsonrpc": "2.0", "id": body.get("id", 1), "result": {}}
 
 @app.post("/reset")
-def reset():
+async def reset(request: Request):
+    global env, current_task
+    try:
+        body = await request.json()
+    except:
+        body = {}
+    task = body.get("task") or body.get("task_id") or "easy"
+    if task not in envs:
+        task = "easy"
+    current_task = task
+    env = envs[task]
     state = env.reset()
-    return {"state": state}
+    return {"state": state, "task": task}
 
 @app.get("/state")
 def get_state():
     return {"state": env.state()}
 
 @app.post("/step", response_model=StepResponse)
-def step(request: StepRequest):
-    if request.action not in ["accept", "propose_edit", "escalate"]:
-        return {"state": None, "reward": -1.0, "done": True}
-    next_state, reward, done, _ = env.step(request.action)
+async def step(request: Request):
+    try:
+        body = await request.json()
+        action = body.get("action", "accept")
+    except:
+        action = "accept"
+    if action not in ["accept", "propose_edit", "escalate"]:
+        return StepResponse(state=None, reward=0.01, done=True)
+    next_state, reward, done, _ = env.step(action)
     return StepResponse(state=next_state, reward=reward, done=done)
 
 @app.post("/grader")
