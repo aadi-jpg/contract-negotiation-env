@@ -4,7 +4,7 @@ from typing import Optional, Any
 from env import ContractEnv
 from models import StepRequest, StepResponse
 
-app = FastAPI()
+app = FastAPI(version="0.1.0")
 env = ContractEnv(task="easy")
 
 def _score(action, state):
@@ -39,6 +39,48 @@ def _score(action, state):
 def home():
     return {"message": "Contract Negotiation Environment API"}
 
+@app.get("/health")
+def health():
+    return {"status": "healthy"}
+
+@app.get("/metadata")
+def metadata():
+    return {
+        "name": "contract-negotiation-env",
+        "description": "An environment that simulates contract clause evaluation. Agents must decide whether to accept, propose edits, or escalate based on company policy and risk.",
+        "version": "0.1.0"
+    }
+
+@app.get("/schema")
+def schema():
+    return {
+        "action": {
+            "type": "string",
+            "enum": ["accept", "propose_edit", "escalate"]
+        },
+        "observation": {
+            "clause": "string",
+            "policy": "string",
+            "risk_level": "string",
+            "vendor_importance": "string"
+        },
+        "state": {
+            "clause": "string",
+            "policy": "string",
+            "risk_level": "string",
+            "vendor_importance": "string"
+        }
+    }
+
+@app.post("/mcp")
+async def mcp(request: Request):
+    body = await request.json()
+    return {
+        "jsonrpc": "2.0",
+        "id": body.get("id", 1),
+        "result": {}
+    }
+
 @app.post("/reset")
 def reset():
     state = env.reset()
@@ -70,7 +112,3 @@ async def grader(request: Request):
 @app.get("/tasks")
 def tasks():
     return {"tasks": ["easy", "medium", "hard"]}
-
-@app.get("/health")
-def health():
-    return {"status": "ok"}
