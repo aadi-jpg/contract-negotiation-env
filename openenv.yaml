@@ -2,8 +2,6 @@ name: contract-negotiation-env
 
 description: >
   An environment that simulates contract clause evaluation.
-  Agents must decide whether to accept, propose edits, or escalate
-  based on company policy and risk.
 
 actions:
   - accept
@@ -18,13 +16,11 @@ observation_space:
 
 reward:
   type: dense
-  description: >
-    Reward is based on alignment with policy and risk handling.
 
 tasks:
   - name: easy
-    grader: grader.easy
+    grader: graders.easy.grade
   - name: medium
-    grader: grader.medium
+    grader: graders.medium.grade
   - name: hard
-    grader: grader.hard
+    grader: graders.hard.grade
