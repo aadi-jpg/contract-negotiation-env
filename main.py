@@ -11,8 +11,10 @@ envs = {
     "medium": ContractEnv(task="medium"),
     "hard": ContractEnv(task="hard"),
 }
-current_task = "easy"
-env = envs["easy"]
+session = {"task": "easy"}
+
+def get_env():
+    return envs[session["task"]]
 
 def _score(action, state):
     if isinstance(state, dict):
@@ -76,7 +78,6 @@ async def mcp(request: Request):
 
 @app.post("/reset")
 async def reset(request: Request):
-    global env, current_task
     try:
         body = await request.json()
     except:
@@ -84,14 +85,13 @@ async def reset(request: Request):
     task = body.get("task") or body.get("task_id") or "easy"
     if task not in envs:
         task = "easy"
-    current_task = task
-    env = envs[task]
-    state = env.reset()
+    session["task"] = task
+    state = envs[task].reset()
     return {"state": state, "task": task}
 
 @app.get("/state")
 def get_state():
-    return {"state": env.state()}
+    return {"state": get_env().state()}
 
 @app.post("/step", response_model=StepResponse)
 async def step(request: Request):
@@ -102,7 +102,7 @@ async def step(request: Request):
         action = "accept"
     if action not in ["accept", "propose_edit", "escalate"]:
         return StepResponse(state=None, reward=0.01, done=True)
-    next_state, reward, done, _ = env.step(action)
+    next_state, reward, done, _ = get_env().step(action)
     return StepResponse(state=next_state, reward=reward, done=done)
 
 @app.post("/grader")
