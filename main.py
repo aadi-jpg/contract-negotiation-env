@@ -1,21 +1,23 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from pydantic import BaseModel
+from typing import Optional, Any
 from env import ContractEnv
 from models import StepRequest, StepResponse
 
 app = FastAPI()
 env = ContractEnv(task="easy")
 
-class GraderRequest(BaseModel):
-    task: str
-    state: dict
-    action: str
-
 def _score(action, state):
-    clause = state.get("clause", "").lower()
-    policy = state.get("policy", "").lower()
-    risk = state.get("risk_level", "")
-    importance = state.get("vendor_importance", "")
+    if isinstance(state, dict):
+        clause = state.get("clause", "").lower()
+        policy = state.get("policy", "").lower()
+        risk = state.get("risk_level", "")
+        importance = state.get("vendor_importance", "")
+    else:
+        clause = getattr(state, "clause", "").lower()
+        policy = getattr(state, "policy", "").lower()
+        risk = getattr(state, "risk_level", "")
+        importance = getattr(state, "vendor_importance", "")
     if clause == policy:
         return 0.99 if action == "accept" else 0.01
     if risk == "high":
@@ -31,7 +33,7 @@ def _score(action, state):
         if action == "propose_edit": return 0.99
         elif action == "accept": return 0.8
         else: return 0.01
-    return 0.01
+    return 0.5
 
 @app.get("/")
 def home():
@@ -54,9 +56,16 @@ def step(request: StepRequest):
     return StepResponse(state=next_state, reward=reward, done=done)
 
 @app.post("/grader")
-def grader(request: GraderRequest):
-    score = _score(request.action, request.state)
-    return {"score": score, "task": request.task}
+async def grader(request: Request):
+    try:
+        body = await request.json()
+    except:
+        body = {}
+    task = body.get("task", "easy")
+    state = body.get("state", body.get("observation", {}))
+    action = body.get("action", "accept")
+    score = _score(action, state)
+    return {"score": score, "task": task, "reward": score}
 
 @app.get("/tasks")
 def tasks():
